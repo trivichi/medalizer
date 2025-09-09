@@ -14,7 +14,7 @@ export default function SignupForm({ onSuccess }: SignupFormProps) {
     e.preventDefault();
     // Fake signup → auto login
     login(username, "fake-jwt-token");
-    onSuccess(); // ✅ close modal after signup
+    onSuccess(); // close modal after signup
   };
 
   return (

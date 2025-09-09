@@ -14,7 +14,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     e.preventDefault();
     // Fake login → always succeeds
     login(username, "fake-jwt-token");
-    onSuccess(); // ✅ close modal after login
+    onSuccess(); //  close modal after login
   };
 
   return (

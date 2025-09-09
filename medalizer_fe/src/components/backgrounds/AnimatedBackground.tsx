@@ -13,7 +13,7 @@ export default function AnimatedBackground() {
           <PointMaterial
             transparent
             color="#0087ff"
-            size={0.020}
+            size={0.02}
             sizeAttenuation={true}
             depthWrite={false}
           />

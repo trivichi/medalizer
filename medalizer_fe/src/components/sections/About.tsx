@@ -43,9 +43,8 @@ export default function About() {
           >
             <h3 className="text-2xl font-bold text-gray-900">Technology</h3>
             <p className="text-gray-600">
-              Using advanced OCR, NER, and Machine Learning algorithms, we process
-              and analyze blood reports with high accuracy. Our system
-              continuously learns and improves with each analysis.
+              Using advanced OCR, NER, and RAG (Retrieval-Augmented Generation) pipeline, we process
+              and analyze blood reports with high accuracy.
             </p>
           </motion.div>
         </div>

@@ -16,7 +16,7 @@ import LoadingOverlay from "./components/ui/LoadingOverlay";
 import ProgressSection from "./components/sections/ProgressSection";
 
 import { AuthProvider } from "./context/AuthContext";
-import AuthModal from "./components/auth/AuthModal"; // ✅ new
+import AuthModal from "./components/auth/AuthModal"; // new
 
 const theme = createTheme({
   palette: {
@@ -34,7 +34,7 @@ function App() {
   const [history, setHistory] = useState<any[]>([]);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
-  const [authModalOpen, setAuthModalOpen] = useState(false); // ✅ modal state
+  const [authModalOpen, setAuthModalOpen] = useState(false); //  modal state
 
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const progressRef = useRef<HTMLDivElement | null>(null);
@@ -48,7 +48,7 @@ function App() {
         { name: "Hemoglobin", value: 13, normal: [12, 16] },
         { name: "WBC", value: 11, normal: [4, 10] },
         { name: "Platelets", value: 180, normal: [150, 400] },
-      ];
+      ]; // dummy data
 
       const newRecs = [
         "Stay hydrated and maintain a balanced diet.",
@@ -111,7 +111,7 @@ function App() {
 
           <div className="min-h-screen w-full relative overflow-hidden">
             <AnimatedBackground />
-            <Header onOpenAuth={() => setAuthModalOpen(true)} /> {/* ✅ pass handler */}
+            <Header onOpenAuth={() => setAuthModalOpen(true)} /> {/*  pass handler */}
             <main className="pt-24">
               <Hero onAnalyze={handleAnalyze} loading={loading} />
               {results.length > 0 && (
@@ -140,7 +140,7 @@ function App() {
             <Footer />
           </div>
 
-          {/* ✅ Global Auth Modal */}
+          {/*  Global Auth Modal */}
           <AuthModal
             isOpen={authModalOpen}
             onClose={() => setAuthModalOpen(false)}
