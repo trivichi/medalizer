@@ -1,0 +1,696 @@
+import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { motion } from 'framer-motion';
+
+// Create a theme instance
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#0087ff',
+    },
+    secondary: {
+      main: '#ffffff',
+    },
+  },
+});
+
+const queryClient = new QueryClient();
+
+// Background animation components
+const AnimatedBlob = ({ delay = 0 }: { delay?: number }) => (
+  <motion.div
+    className="absolute bg-gradient-to-r from-primary-400 to-blue-400 opacity-30 rounded-full blur-2xl"
+    initial={{
+      width: "400px",
+      height: "400px",
+      x: "-25%",
+      y: "-25%",
+    }}
+    animate={{
+      scale: [1, 1.2, 1],
+      rotate: [0, 180, 360],
+      x: ["-25%", "25%", "-25%"],
+      y: ["-25%", "25%", "-25%"],
+    }}
+    transition={{
+      duration: 20,
+      repeat: Infinity,
+      delay,
+      ease: "linear",
+    }}
+  />
+);
+
+const DynamicBackground = () => {
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-br from-white via-primary-50 to-white">
+      {/* Animated gradient background */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-primary-400/30 via-blue-400/30 to-primary-400/30"
+        animate={{
+          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        style={{
+          backgroundSize: "200% 100%",
+        }}
+      />
+
+      {/* Moving blobs */}
+      <div className="absolute inset-0">
+        <AnimatedBlob />
+        <AnimatedBlob delay={7} />
+        <AnimatedBlob delay={14} />
+      </div>
+
+      {/* Floating particles */}
+      <div className="absolute inset-0">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-4 h-4 bg-primary-500 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              opacity: 0.2,
+              filter: "blur(8px)",
+            }}
+            animate={{
+              y: [0, 30, 0],
+              opacity: [0.2, 0.3, 0.2],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 4 + Math.random() * 2,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Moving waves */}
+      <div className="absolute inset-0">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-primary-300/30 to-transparent"
+            animate={{
+              y: [0, 100, 0],
+              opacity: [0.3, 0.5, 0.3],
+            }}
+            transition={{
+              duration: 5,
+              delay: i * 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Light overlay for better contrast */}
+      <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]" />
+    </div>
+  );
+};
+
+const AnimatedBackground = () => (
+  <div className="fixed inset-0 overflow-hidden -z-10">
+    {/* Main gradient background */}
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-primary-100 to-white animate-gradient-background" 
+         style={{ backgroundSize: '400% 400%' }} />
+    
+    {/* Animated gradient overlay */}
+    <motion.div
+      className="absolute inset-0 bg-gradient-to-r from-primary-200/30 via-blue-200/30 to-primary-200/30"
+      animate={{
+        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+      }}
+      transition={{
+        duration: 10,
+        repeat: Infinity,
+        ease: "linear"
+      }}
+      style={{ backgroundSize: '200% 100%' }}
+    />
+
+    {/* Intense waves effect */}
+    <div className="absolute inset-0">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute inset-0 bg-gradient-to-t from-transparent via-primary-300/5 to-transparent"
+          animate={{
+            y: [0, 100, 0],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 5,
+            delay: i * 1.5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      ))}
+    </div>
+
+    {/* Bright spots */}
+    <div className="absolute inset-0">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-32 h-32 bg-primary-300/20 rounded-full blur-xl"
+          initial={{
+            x: Math.random() * 100 + '%',
+            y: Math.random() * 100 + '%',
+          }}
+          animate={{
+            x: [
+              Math.random() * 100 + '%',
+              Math.random() * 100 + '%',
+              Math.random() * 100 + '%'
+            ],
+            y: [
+              Math.random() * 100 + '%',
+              Math.random() * 100 + '%',
+              Math.random() * 100 + '%'
+            ],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+      ))}
+    </div>
+
+  </div>
+);
+
+function App() {
+  const [file, setFile] = useState<File | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setFile(event.target.files[0]);
+    }
+  };
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <div className="min-h-screen w-full relative overflow-hidden">
+          <DynamicBackground />
+          <AnimatedBackground />
+          {/* Header */}
+          <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md shadow-sm z-50">
+            <div className="w-[92%] max-w-[1400px] mx-auto py-4">
+              <div className="flex items-center justify-between">
+                <motion.h1 
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-2xl font-bold text-primary-500"
+                >
+                  Blood Report Analyzer
+                </motion.h1>
+                <div className="flex items-center">
+                  <nav className="hidden md:flex space-x-8">
+                    {["Features", "How it Works", "About"].map((item) => (
+                      <motion.a
+                        key={item}
+                        href={`#${item.toLowerCase().replace(/\s+/g, '-')}`}
+                        className="relative text-gray-600 hover:text-primary-500 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {item}
+                        <motion.span
+                          className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-500"
+                          initial={{ width: "0%" }}
+                          whileHover={{ width: "100%" }}
+                          transition={{ duration: 0.2 }}
+                        />
+                      </motion.a>
+                    ))}
+                  </nav>
+                  <motion.button
+                    className="md:hidden p-2 text-gray-600 hover:text-primary-500"
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </motion.button>
+                </div>
+                
+                {/* Mobile Menu */}
+                <motion.nav
+                  className={`absolute top-full left-0 w-full bg-white/95 backdrop-blur-md shadow-lg py-4 ${isMenuOpen ? 'block' : 'hidden'} md:hidden`}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: isMenuOpen ? 1 : 0, y: isMenuOpen ? 0 : -20 }}
+                >
+                  <div className="container-width flex flex-col space-y-4">
+                    {["Features", "How it Works", "About"].map((item) => (
+                      <motion.a
+                        key={item}
+                        href={`#${item.toLowerCase().replace(/\s+/g, '-')}`}
+                        className="text-gray-600 hover:text-primary-500 transition-colors py-2"
+                        whileHover={{ x: 10 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item}
+                      </motion.a>
+                    ))}
+                  </div>
+                </motion.nav>
+              </div>
+            </div>
+          </header>
+
+          {/* Hero Section */}
+          <main className="pt-24">
+            <div className="container-width">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-center"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8 }}
+                >
+                  <h2 className="relative text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl mb-8 inline-block">
+                    Analyze Your Blood Reports with{' '}
+                    <span className="animated-gradient-text relative">
+                      AI
+                      <motion.span
+                        className="absolute -right-6 top-0"
+                        animate={{ rotate: [0, 14, -8, 14, -4, 10, 0] }}
+                        transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1 }}
+                      >
+                        ✨
+                      </motion.span>
+                    </span>
+                  </h2>
+                </motion.div>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  className="text-lg text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed"
+                >
+                  Upload your blood report and get instant insights using advanced AI technology.
+                  Our system helps you understand your health metrics better.
+                </motion.p>
+
+                {/* Upload Card */}
+                <motion.div 
+                  className="card max-w-xl mx-auto glassmorphism"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 }}
+                >
+                  <div className="flex flex-col items-center p-8 space-y-6">
+                    <div className="w-full max-w-sm">
+                      <motion.label 
+                        htmlFor="file-upload"
+                        className="cursor-pointer flex flex-col items-center justify-center w-full h-48 
+                                 border-2 border-dashed border-primary-200 rounded-xl 
+                                 hover:border-primary-500 transition-all duration-300
+                                 bg-white/50 hover:bg-white/70 group"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="space-y-4 text-center px-6">
+                          <motion.div
+                            animate={{ y: [0, -5, 0] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            <svg 
+                              className="mx-auto h-12 w-12 text-primary-400 group-hover:text-primary-500
+                                       transition-colors duration-300"
+                              stroke="currentColor" 
+                              fill="none" 
+                              viewBox="0 0 48 48" 
+                              aria-hidden="true"
+                            >
+                              <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={2} 
+                                d="M24 32V16m0 0l-8 8m8-8l8 8M6 40h36a2 2 0 002-2V10a2 2 0 00-2-2H6a2 2 0 00-2 2v28a2 2 0 002 2z" 
+                              />
+                            </svg>
+                          </motion.div>
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium text-primary-500 dynamic-underline inline-block">
+                              Click to upload
+                            </span>
+                            {' '}or drag and drop
+                          </div>
+                          <p className="text-xs text-gray-500">PDF, PNG, JPG up to 10MB</p>
+                        </div>
+                      </motion.label>
+                      <input
+                        id="file-upload"
+                        name="file-upload"
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        onChange={handleFileUpload}
+                      />
+                    </div>
+                    {file && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-gray-600 bg-primary-50/50 px-4 py-2 rounded-lg"
+                      >
+                        <span className="font-medium">Selected file:</span> {file.name}
+                      </motion.div>
+                    )}
+                    <motion.button 
+                      className="btn-primary group"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <span className="relative z-10">Analyze Report</span>
+                      <motion.span 
+                        className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 
+                                 group-hover:translate-x-1 transition-all duration-300"
+                      >
+                        →
+                      </motion.span>
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
+          </main>
+
+          {/* Features Section */}
+          <section id="features" className="py-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                className="text-center mb-16"
+              >
+                <h2 className="text-3xl font-bold text-gray-900">Advanced Features</h2>
+                <p className="mt-4 text-lg text-gray-600">Powerful tools to analyze and understand your health data</p>
+              </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[
+                  {
+                    title: "AI-Powered Analysis",
+                    description: "Advanced algorithms analyze your blood report data to provide accurate insights",
+                    icon: (
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    title: "Trend Tracking",
+                    description: "Compare multiple reports over time to track your health progress",
+                    icon: (
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    title: "Smart Recommendations",
+                    description: "Get personalized insights and recommendations based on your results",
+                    icon: (
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    )
+                  }
+                ].map((feature, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.2 }}
+                    whileHover={{ scale: 1.05 }}
+                    className="group p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 relative
+                             hover:bg-gradient-to-br hover:from-white hover:to-primary-50"
+                  >
+                    <motion.div 
+                      className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-primary-500 mb-4 mx-auto
+                                group-hover:bg-primary-200 transition-colors duration-300"
+                      whileHover={{ rotate: 360 }}
+                      transition={{ duration: 0.8 }}
+                    >
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        {feature.icon}
+                      </motion.div>
+                    </motion.div>
+                    <motion.div
+                      initial={{ scale: 1 }}
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors duration-300">
+                        {feature.title}
+                      </h3>
+                      <p className="text-gray-600 group-hover:text-gray-700 transition-colors duration-300">
+                        {feature.description}
+                      </p>
+                    </motion.div>
+                    <motion.div 
+                      className="absolute inset-0 border-2 border-transparent rounded-xl"
+                      whileHover={{ borderColor: "rgba(0, 135, 255, 0.1)" }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* How it Works Section */}
+          <section id="how-it-works" className="py-20 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                className="text-center mb-16"
+              >
+                <h2 className="text-3xl font-bold text-gray-900">How It Works</h2>
+                <p className="mt-4 text-lg text-gray-600">Simple steps to analyze your blood report</p>
+              </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                {[
+                  {
+                    step: "1",
+                    title: "Upload Report",
+                    description: "Upload your blood report in PDF or image format",
+                    icon: (
+                      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                    )
+                  },
+                  {
+                    step: "2",
+                    title: "AI Analysis",
+                    description: "Our AI system analyzes the report data",
+                    icon: (
+                      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    step: "3",
+                    title: "Get Insights",
+                    description: "Review detailed analysis and insights",
+                    icon: (
+                      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                    )
+                  },
+                  {
+                    step: "4",
+                    title: "Track Progress",
+                    description: "Compare with previous reports to track changes",
+                    icon: (
+                      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    )
+                  }
+                ].map((step, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.2 }}
+                    className="relative group"
+                  >
+                    <motion.div 
+                      className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 
+                                rounded-full bg-gradient-to-br from-primary-500 to-blue-500 text-white 
+                                flex items-center justify-center font-bold text-xl shadow-lg
+                                group-hover:from-primary-600 group-hover:to-blue-600 transition-all duration-300"
+                      whileHover={{ scale: 1.1, rotate: 360 }}
+                      transition={{ duration: 0.8 }}
+                    >
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          rotateY: [0, 360]
+                        }}
+                        transition={{ 
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      >
+                        {step.icon}
+                      </motion.div>
+                    </motion.div>
+                    {index < 3 && (
+                      <motion.div 
+                        className="hidden md:block absolute top-8 left-[60%] w-full h-0.5 bg-primary-200"
+                        initial={{ scaleX: 0 }}
+                        whileInView={{ scaleX: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.3 + 0.5, duration: 0.8 }}
+                      />
+                    )}
+                    <motion.div 
+                      className="pt-12 text-center relative"
+                      whileHover={{ y: -5 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="bg-white/50 p-6 rounded-xl backdrop-blur-sm
+                                    group-hover:bg-white group-hover:shadow-lg
+                                    transition-all duration-300">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
+                          {step.title}
+                        </h3>
+                        <p className="text-gray-600 group-hover:text-gray-700">
+                          {step.description}
+                        </p>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* About Section */}
+          <section id="about" className="py-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                className="text-center mb-16"
+              >
+                <h2 className="text-3xl font-bold text-gray-900">About</h2>
+                <p className="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+                  Blood Report Analyzer is an advanced AI-powered tool designed to make understanding your blood test results easier. 
+                  Our system combines cutting-edge technology with medical expertise to provide accurate and actionable insights.
+                </p>
+              </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  className="space-y-6"
+                >
+                  <h3 className="text-2xl font-bold text-gray-900">Our Mission</h3>
+                  <p className="text-gray-600">
+                    We aim to empower individuals with better understanding of their health by making medical reports more accessible and comprehensible.
+                    Our AI technology helps identify potential health concerns early and tracks your progress over time.
+                  </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  className="space-y-6"
+                >
+                  <h3 className="text-2xl font-bold text-gray-900">Technology</h3>
+                  <p className="text-gray-600">
+                    Using advanced OCR (Optical Character Recognition), NER (Named Entity Recognition), and Machine Learning algorithms, 
+                    we process and analyze blood reports with high accuracy. Our system continuously learns and improves with each analysis.
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+          </section>
+
+          {/* Footer */}
+          <footer className="bg-gray-900 text-white py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                  <h3 className="text-xl font-bold mb-4">Blood Report Analyzer</h3>
+                  <p className="text-gray-400">Making health data accessible and understandable</p>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
+                  <ul className="space-y-2">
+                    <li><a href="#features" className="text-gray-400 hover:text-white">Features</a></li>
+                    <li><a href="#how-it-works" className="text-gray-400 hover:text-white">How it Works</a></li>
+                    <li><a href="#about" className="text-gray-400 hover:text-white">About</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold mb-4">Contact</h4>
+                  <p className="text-gray-400">Have questions? Contact us at:</p>
+                  <a href="mailto:support@bloodreportanalyzer.com" className="text-primary-400 hover:text-primary-300">
+                    support@bloodreportanalyzer.com
+                  </a>
+                </div>
+              </div>
+              <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
+                <p>&copy; {new Date().getFullYear()} Blood Report Analyzer. All rights reserved.</p>
+              </div>
+            </div>
+          </footer>
+        </div>
+      </ThemeProvider>
+    </QueryClientProvider>
+  )
+}
+
+export default App

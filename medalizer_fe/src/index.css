@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html, body {
+    @apply scroll-smooth w-full min-h-screen overflow-x-hidden;
+  }
+
+  body {
+    @apply bg-white text-gray-900 m-0 p-0;
+  }
+
+  #root {
+    @apply w-full min-h-screen flex flex-col;
+  }
+}
+
+@layer components {
+  .container-width {
+    @apply w-[95%] max-w-[1400px] mx-auto px-4;
+    width: min(95%, 1400px);
+  }
+  .btn-primary {
+    @apply relative overflow-hidden bg-gradient-to-r from-primary-500 to-blue-500 text-white 
+           px-8 py-3 rounded-lg transform hover:-translate-y-1 hover:shadow-lg
+           transition-all duration-300 ease-out
+           before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/20 
+           before:to-transparent before:translate-x-[-100%] hover:before:translate-x-[100%] 
+           before:transition-transform before:duration-700 
+           after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent 
+           after:to-white/20 after:translate-x-[100%] hover:after:translate-x-[-100%] 
+           after:transition-transform after:duration-700;
+  }
+  .card {
+    @apply relative bg-white/80 backdrop-blur-sm rounded-xl p-8
+           transform transition-all duration-500 ease-out
+           hover:shadow-[0_0_30px_rgba(0,135,255,0.15)] hover:-translate-y-2
+           before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-r 
+           before:from-primary-500/5 before:via-blue-500/5 before:to-primary-500/5
+           before:bg-[length:200%_100%] before:animate-[shine_3s_infinite]
+           after:absolute after:inset-0 after:rounded-xl after:border-2 
+           after:border-primary-500/0 hover:after:border-primary-500/10
+           after:transition-colors after:duration-500;
+  }
+  .input-field {
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-lg 
+           focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
+           transition-all duration-300 bg-white/70 backdrop-blur-sm
+           hover:border-primary-500/50 placeholder-gray-400
+           focus:shadow-[0_0_20px_rgba(0,135,255,0.15)];
+  }
+  .animated-gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-blue-500
+           animate-pulse duration-[3s];
+  }
+  .floating-element {
+    @apply animate-float;
+  }
+  .glassmorphism {
+    @apply bg-white/70 backdrop-blur-md shadow-lg
+           border border-white/20 rounded-xl;
+  }
+  .hover-card-effect {
+    @apply transform transition-all duration-300 ease-out
+           hover:scale-[1.02] hover:shadow-lg
+           hover:shadow-primary-500/10;
+  }
+  .animated-border {
+    @apply relative after:absolute after:inset-0
+           after:rounded-lg after:border-2 after:border-primary-500/0
+           hover:after:border-primary-500/20
+           after:transition-colors after:duration-300;
+  }
+  .dynamic-underline {
+    @apply relative after:absolute after:bottom-0 after:left-0
+           after:h-0.5 after:w-0 after:bg-primary-500
+           hover:after:w-full after:transition-all after:duration-300;
+  }
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
