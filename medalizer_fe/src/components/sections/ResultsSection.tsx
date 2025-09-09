@@ -22,8 +22,8 @@ type ResultItem = {
 interface ResultsSectionProps {
   results: ResultItem[];
   recommendations: string[];
-  progressRef?: React.RefObject<HTMLDivElement | null>; // ✅ fixed type
-  filename?: string; // ✅ new, so we can show uploaded file name in PDF
+  progressRef?: React.RefObject<HTMLDivElement | null>; // fixed type
+  filename?: string; //  new, so we can show uploaded file name in PDF
 }
 
 function normalizeRange(normal: string | [number, number]): [number, number] {
@@ -46,7 +46,7 @@ export default function ResultsSection({
     const pdf = new jsPDF("p", "mm", "a4");
     const pageWidth = pdf.internal.pageSize.getWidth();
 
-    // ✅ Header
+    // Header
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(18);
     pdf.text("Blood Test Report", pageWidth / 2, 20, { align: "center" });
@@ -59,7 +59,7 @@ export default function ResultsSection({
       pdf.text(`File: ${filename}`, 15, 37);
     }
 
-    // ✅ Results page
+    // Results page
     const resultsCanvas = await html2canvas(exportRef.current, {
       scale: 2,
       useCORS: true,
@@ -72,7 +72,7 @@ export default function ResultsSection({
 
     pdf.addImage(resultsImg, "PNG", 15, 45, pageWidth - 30, resultsHeight);
 
-    // ✅ Progress chart as second page
+    // Progress chart as second page
     if (progressRef?.current) {
       pdf.addPage();
       pdf.setFont("helvetica", "bold");
@@ -127,7 +127,7 @@ export default function ResultsSection({
           </p>
         </motion.div>
 
-        {/* ✅ Clean Exported Content */}
+        {/* Clean Exported Content */}
         <div ref={exportRef} className="bg-white p-6 rounded-lg">
           {/* Metric cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
