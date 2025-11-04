@@ -1,3 +1,4 @@
+// src/components/sections/ResultsSection.tsx
 import { useRef } from "react";
 import { motion } from "framer-motion";
 import {
@@ -9,6 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  Cell,
 } from "recharts";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -22,8 +24,8 @@ type ResultItem = {
 interface ResultsSectionProps {
   results: ResultItem[];
   recommendations: string[];
-  progressRef?: React.RefObject<HTMLDivElement | null>; // fixed type
-  filename?: string; //  new, so we can show uploaded file name in PDF
+  progressRef?: React.RefObject<HTMLDivElement | null>;
+  filename?: string;
 }
 
 function normalizeRange(normal: string | [number, number]): [number, number] {
@@ -63,7 +65,7 @@ export default function ResultsSection({
     const resultsCanvas = await html2canvas(exportRef.current, {
       scale: 2,
       useCORS: true,
-      backgroundColor: "#ffffff", // white background
+      backgroundColor: "#ffffff",
     });
     const resultsImg = resultsCanvas.toDataURL("image/png");
     const resultsProps = pdf.getImageProperties(resultsImg);
@@ -77,7 +79,9 @@ export default function ResultsSection({
       pdf.addPage();
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(16);
-      pdf.text("Health Progress Over Time", pageWidth / 2, 20, { align: "center" });
+      pdf.text("Health Progress Over Time", pageWidth / 2, 20, {
+        align: "center",
+      });
 
       const progressCanvas = await html2canvas(progressRef.current, {
         scale: 2,
@@ -103,16 +107,30 @@ export default function ResultsSection({
   const getStatus = (value: number, normal: string | [number, number]) => {
     const [min, max] = normalizeRange(normal);
     if (value < min)
-      return { label: "Low", color: "text-red-600", bg: "bg-red-50 border-red-200" };
+      return {
+        label: "Low",
+        color: "text-red-600",
+        bg: "bg-red-50 border-red-200",
+        barColor: "#ef4444",
+      };
     if (value > max)
-      return { label: "High", color: "text-red-600", bg: "bg-red-50 border-red-200" };
-    return { label: "Normal", color: "text-green-600", bg: "bg-green-50 border-green-200" };
+      return {
+        label: "High",
+        color: "text-orange-600",
+        bg: "bg-orange-50 border-orange-200",
+        barColor: "#f97316",
+      };
+    return {
+      label: "Normal",
+      color: "text-green-600",
+      bg: "bg-green-50 border-green-200",
+      barColor: "#22c55e",
+    };
   };
 
   return (
     <section id="results" className="py-20 scroll-mt-24">
       <div className="max-w-5xl mx-auto px-4">
-        {/* Big Section Heading */}
         <motion.div
           className="text-center mb-14"
           initial={{ opacity: 0, y: 30 }}
@@ -127,7 +145,6 @@ export default function ResultsSection({
           </p>
         </motion.div>
 
-        {/* Clean Exported Content */}
         <div ref={exportRef} className="bg-white p-6 rounded-lg">
           {/* Metric cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -135,9 +152,12 @@ export default function ResultsSection({
               const status = getStatus(r.value, r.normal);
               const [min, max] = normalizeRange(r.normal);
               return (
-                <div
+                <motion.div
                   key={r.name + idx}
                   className={`p-5 rounded-lg border ${status.bg}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.1 }}
                 >
                   <div className="text-sm text-gray-500">{r.name}</div>
                   <div className="mt-1 text-2xl font-semibold text-gray-900">
@@ -149,12 +169,12 @@ export default function ResultsSection({
                   <div className={`mt-2 text-sm font-bold ${status.color}`}>
                     {status.label}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
 
-          {/* Chart */}
+          {/* Interactive Bar Chart with color coding */}
           <div className="bg-white border rounded-lg p-4 mb-10">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               Visual Analysis
@@ -167,15 +187,25 @@ export default function ResultsSection({
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="Value" fill="url(#valueGradient)" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="Min" fill="#82ca9d" opacity={0.7} radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="Max" fill="#ffc658" opacity={0.7} radius={[6, 6, 0, 0]} />
-                  <defs>
-                    <linearGradient id="valueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0087ff" stopOpacity={0.9} />
-                      <stop offset="95%" stopColor="#0087ff" stopOpacity={0.3} />
-                    </linearGradient>
-                  </defs>
+                  <Bar dataKey="Value" radius={[6, 6, 0, 0]}>
+                    {chartData.map((entry, index) => {
+                      const result = results[index];
+                      const status = getStatus(result.value, result.normal);
+                      return <Cell key={`cell-${index}`} fill={status.barColor} />;
+                    })}
+                  </Bar>
+                  <Bar
+                    dataKey="Min"
+                    fill="#82ca9d"
+                    opacity={0.7}
+                    radius={[6, 6, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="Max"
+                    fill="#ffc658"
+                    opacity={0.7}
+                    radius={[6, 6, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -188,16 +218,22 @@ export default function ResultsSection({
             </h3>
             <ul className="space-y-2 text-gray-700">
               {recommendations.map((rec, i) => (
-                <li key={i} className="flex items-start gap-2">
+                <motion.li
+                  key={i}
+                  className="flex items-start gap-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                >
                   <span className="mt-1">✔</span>
                   <span>{rec}</span>
-                </li>
+                </motion.li>
               ))}
             </ul>
           </div>
         </div>
 
-        {/* Download Button (not in PDF) */}
+        {/* Download Button */}
         <motion.div className="text-center mt-8">
           <button
             onClick={handleDownloadPDF}

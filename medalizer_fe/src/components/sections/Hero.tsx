@@ -1,18 +1,23 @@
+// src/components/sections/Hero.tsx
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useDropzone } from "react-dropzone";
+import { apiService } from "../../services/api";
 
 interface HeroProps {
-  onAnalyze: (file: File | null) => void;
+  onAnalyze: (data: any, filename: string) => void;
   loading: boolean;
+  setLoading: (loading: boolean) => void;
 }
 
-export default function Hero({ onAnalyze, loading }: HeroProps) {
+export default function Hero({ onAnalyze, loading, setLoading }: HeroProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [error, setError] = useState("");
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       setSelectedFile(acceptedFiles[0]);
+      setError("");
     }
   };
 
@@ -20,14 +25,40 @@ export default function Hero({ onAnalyze, loading }: HeroProps) {
     onDrop,
     accept: {
       "application/pdf": [".pdf"],
-      "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+      "image/png": [".png"],
     },
     multiple: false,
   });
 
-  const handleAnalyzeClick = () => {
-    if (selectedFile) {
-      onAnalyze(selectedFile);
+  const handleAnalyzeClick = async () => {
+    if (!selectedFile) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Please login first to analyze reports");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await apiService.extractReport(selectedFile);
+      
+      // Fetch updated reports to get the latest data
+      const reportsData = await apiService.getReports();
+      
+      if (reportsData.report_history.length > 0) {
+        const latestReport = reportsData.report_history[reportsData.report_history.length - 1];
+        onAnalyze(latestReport, selectedFile.name);
+      }
+    } catch (err: any) {
+      setError(
+        err.response?.data?.detail || 
+        "Failed to analyze report. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,9 +75,15 @@ export default function Hero({ onAnalyze, loading }: HeroProps) {
         </h1>
         <p className="text-lg text-gray-600 mb-10">
           Upload your <span className="font-semibold">PDF</span> or{" "}
-          <span className="font-semibold">Image</span> reports and get AI-driven
+          <span className="font-semibold">PNG</span> reports and get AI-driven
           health insights within seconds.
         </p>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600">
+            {error}
+          </div>
+        )}
 
         {/* Drag & Drop Zone */}
         <div
@@ -60,9 +97,7 @@ export default function Hero({ onAnalyze, loading }: HeroProps) {
           <input {...getInputProps()} />
           {selectedFile ? (
             <div className="flex flex-col items-center">
-              <p className="text-gray-700 font-medium">
-                {selectedFile.name}
-              </p>
+              <p className="text-gray-700 font-medium">{selectedFile.name}</p>
               <p className="text-sm text-gray-500">
                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
               </p>
@@ -71,7 +106,7 @@ export default function Hero({ onAnalyze, loading }: HeroProps) {
             <p className="text-gray-500">
               {isDragActive
                 ? "Drop the file here..."
-                : "Drag & drop a PDF or Image here, or click to select"}
+                : "Drag & drop a PDF or PNG here, or click to select"}
             </p>
           )}
         </div>
