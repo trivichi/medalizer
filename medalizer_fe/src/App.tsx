@@ -20,6 +20,9 @@ import { AuthProvider } from "./context/AuthContext";
 import AuthModal from "./components/auth/AuthModal";
 import { apiService } from "./services/api";
 
+// Import connection tester for development
+import ConnectionTester from "./components/dev/ConnectionTester";
+
 const theme = createTheme({
   palette: {
     primary: { main: "#0087ff" },
@@ -29,23 +32,25 @@ const theme = createTheme({
 
 const queryClient = new QueryClient();
 
+console.log("[App] Application starting");
+console.log("[App] Environment:", import.meta.env.MODE);
+
 // Helper function to parse test values and ranges
 function parseTestData(data: Record<string, string>) {
+  console.log("[App] Parsing test data:", data);
   const results: any[] = [];
   
   Object.entries(data).forEach(([key, value]) => {
-    // Try to extract numeric value and range
     const numericMatch = value.match(/(\d+\.?\d*)/);
     const rangeMatch = value.match(/(\d+\.?\d*)\s*-\s*(\d+\.?\d*)/);
     
     if (numericMatch) {
       const testValue = parseFloat(numericMatch[1]);
-      let normalRange: [number, number] = [0, 100]; // default
+      let normalRange: [number, number] = [0, 100];
       
       if (rangeMatch) {
         normalRange = [parseFloat(rangeMatch[1]), parseFloat(rangeMatch[2])];
       } else {
-        // Set default ranges based on common test names
         const keyLower = key.toLowerCase();
         if (keyLower.includes('hb') || keyLower.includes('hemoglobin')) {
           normalRange = [12, 16];
@@ -66,11 +71,12 @@ function parseTestData(data: Record<string, string>) {
     }
   });
   
+  console.log("[App] Parsed results:", results);
   return results;
 }
 
-// Generate AI recommendations based on results
 function generateRecommendations(results: any[]): string[] {
+  console.log("[App] Generating recommendations for results:", results);
   const recs: string[] = [];
   
   results.forEach(r => {
@@ -90,6 +96,7 @@ function generateRecommendations(results: any[]): string[] {
     recs.push("Maintain a healthy lifestyle with proper diet and exercise.");
   }
   
+  console.log("[App] Generated recommendations:", recs);
   return recs;
 }
 
@@ -108,15 +115,21 @@ function App() {
 
   // Load reports when user logs in
   useEffect(() => {
+    console.log("[App] useEffect - checking for existing token");
     const token = localStorage.getItem("token");
     if (token) {
+      console.log("[App] Token found, loading reports");
       loadReports();
+    } else {
+      console.log("[App] No token found, skipping report load");
     }
   }, []);
 
   const loadReports = async () => {
+    console.log("[App] loadReports called");
     try {
       const response = await apiService.getReports();
+      console.log("[App] Reports loaded:", response);
       
       const loadedHistory = response.report_history.map((reportData, idx) => {
         const parsedResults = parseTestData(reportData);
@@ -139,13 +152,18 @@ function App() {
         };
       });
       
+      console.log("[App] History processed:", loadedHistory);
       setHistory(loadedHistory);
     } catch (err) {
-      console.error("Failed to load reports:", err);
+      console.error("[App] Failed to load reports:", err);
     }
   };
 
   const handleAnalyze = async (data: any, filename: string) => {
+    console.log("[App] handleAnalyze called");
+    console.log("[App] Data:", data);
+    console.log("[App] Filename:", filename);
+    
     const parsedResults = parseTestData(data);
     const recs = generateRecommendations(parsedResults);
 
@@ -165,6 +183,8 @@ function App() {
       recommendations: recs,
     };
 
+    console.log("[App] New report created:", newReport);
+    
     setResults(parsedResults);
     setRecommendations(recs);
     setCurrentFilename(filename);
@@ -174,12 +194,14 @@ function App() {
     // Scroll to results
     setTimeout(() => {
       if (resultsRef.current) {
+        console.log("[App] Scrolling to results");
         resultsRef.current.scrollIntoView({ behavior: "smooth" });
       }
     }, 100);
   };
 
   const handleSelectReport = (report: any) => {
+    console.log("[App] Report selected:", report);
     setResults(report.results);
     setRecommendations(report.recommendations);
     setCurrentFilename(report.filename);
@@ -190,6 +212,7 @@ function App() {
   };
 
   const handleDeleteReport = (id: string) => {
+    console.log("[App] Deleting report:", id);
     setHistory((prev) => prev.filter((r) => r.id !== id));
     if (selectedReportId === id) {
       setResults([]);
@@ -242,6 +265,9 @@ function App() {
             isOpen={authModalOpen}
             onClose={() => setAuthModalOpen(false)}
           />
+          
+          {/* Connection Tester - Remove in production */}
+          {import.meta.env.DEV && <ConnectionTester />}
         </ThemeProvider>
       </QueryClientProvider>
     </AuthProvider>
