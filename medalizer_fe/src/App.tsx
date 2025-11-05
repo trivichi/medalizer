@@ -1,3 +1,5 @@
+import ChatbotContainer from "./components/chat/Chatbot";
+
 import { useState, useRef, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -18,6 +20,9 @@ import ProgressSection from "./components/sections/ProgressSection";
 import { AuthProvider } from "./context/AuthContext";
 import AuthModal from "./components/auth/AuthModal";
 import { apiService } from "./services/api";
+import CumulativeReportsView from "./components/reports/CumulativeReportsView";
+import ViewAllReportsButton from "./components/reports/ViewAllReportsButton";
+
 
 const theme = createTheme({
   palette: {
@@ -86,7 +91,7 @@ function parseTestData(data: Record<string, string>) {
 function App() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
-  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [recommendations, setRecommendations] = useState<string>("");
   const [history, setHistory] = useState<any[]>([]);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [currentFilename, setCurrentFilename] = useState<string>("");
@@ -95,55 +100,77 @@ function App() {
 
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const progressRef = useRef<HTMLDivElement | null>(null);
+const [currentReportData, setCurrentReportData] = useState<Record<string, any>>({});
+const [showAllReports, setShowAllReports] = useState(false);
+const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Load reports when user logs in
-  useEffect(() => {
+ useEffect(() => {
     console.log("[App] useEffect - checking for existing token");
     const token = localStorage.getItem("token");
     if (token) {
-      console.log("[App] Token found, loading reports");
+      console.log("[App] Token found, user is logged in");
+      setIsLoggedIn(true);
       loadReports();
     } else {
-      console.log("[App] No token found, skipping report load");
+      console.log("[App] No token found");
+      setIsLoggedIn(false);
     }
   }, []);
 
   // Updated AI recommendations function - accepts full report history
-  const getAIRecommendations = async (reportHistory: Record<string, any>[]) => {
-    console.log("[App] Getting AI recommendations for full report history:", reportHistory);
+  // const getAIRecommendations = async (reportHistory: Record<string, any>[]) => {
+  //   console.log("[App] Getting AI recommendations for full report history:", reportHistory);
 
-    try {
-      // Send the full report history dictionary instead of a single testData object
-      const response = await apiService.getAIRecommendations(reportHistory);
+  //   try {
+  //     // Send the full report history dictionary instead of a single testData object
+  //     const response = await apiService.getAIRecommendations(reportHistory);
 
-      console.log("[App] AI recommendations received:", response);
+  //     console.log("[App] AI recommendations received:", response);
 
-      if (response.results) {
-        const recs = response.results
-          .split('\n')
-          .filter((line: string) => line.trim().length > 0)
-          .map((line: string) => line.replace(/^[-•*]\s*/, '').trim());
+  //     if (response.results) {
+  //       const recs = response.results
+  //         .split('\n')
+  //         .filter((line: string) => line.trim().length > 0)
+  //         .map((line: string) => line.replace(/^[-•*]\s*/, '').trim());
 
-        return recs.length > 0 ? recs : [
-          "All your test results appear within acceptable ranges.",
-          "Keep maintaining your health with regular checkups and a balanced lifestyle."
-        ];
-      }
+  //       return recs.length > 0 ? recs : [
+  //         "All your test results appear within acceptable ranges.",
+  //         "Keep maintaining your health with regular checkups and a balanced lifestyle."
+  //       ];
+  //     }
 
-      return [
-        "Unable to generate recommendations at this time.",
-        "Please consult your healthcare provider for detailed insights."
-      ];
+  //     return [
+  //       "Unable to generate recommendations at this time.",
+  //       "Please consult your healthcare provider for detailed insights."
+  //     ];
 
-    } catch (err) {
-      console.error("[App] Failed to get AI recommendations:", err);
-      return [
-        "AI recommendations service is currently unavailable.",
-        "Please try again later or consult your doctor."
-      ];
+  //   } catch (err) {
+  //     console.error("[App] Failed to get AI recommendations:", err);
+  //     return [
+  //       "AI recommendations service is currently unavailable.",
+  //       "Please try again later or consult your doctor."
+  //     ];
+  //   }
+  // };
+const getAIRecommendations = async (reportHistory: Record<string, any>[]) => {
+  console.log("[App] Getting AI recommendations for full report history:", reportHistory);
+
+  try {
+    const response = await apiService.getAIRecommendations(reportHistory);
+    console.log("[App] AI recommendations received:", response);
+
+    if (response.results) {
+      return response.results.trim() || "All your test results appear within acceptable ranges. Keep maintaining your health with regular checkups and a balanced lifestyle.";
     }
-  };
 
+    return "Unable to generate recommendations at this time. Please consult your healthcare provider for detailed insights.";
+
+  } catch (err) {
+    console.error("[App] Failed to get AI recommendations:", err);
+    return "AI recommendations service is currently unavailable. Please try again later or consult your doctor.";
+  }
+};
   const loadReports = async () => {
     console.log("[App] loadReports called");
     try {
@@ -195,7 +222,7 @@ function App() {
 
     try {
       const parsedResults = parseTestData(data);
-
+      setCurrentReportData(data);
       // Get AI recommendations for this single report
       console.log("[App] Fetching AI recommendations for new report...");
       const aiRecs = await getAIRecommendations([data]);
@@ -225,6 +252,9 @@ function App() {
       setHistory((prev) => [newReport, ...prev]);
       setSelectedReportId(newReport.id);
 
+      console.log("[App] Reloading reports from backend...");
+      await loadReports();
+
       // Scroll to results
       setTimeout(() => {
         if (resultsRef.current) {
@@ -232,6 +262,7 @@ function App() {
           resultsRef.current.scrollIntoView({ behavior: "smooth" });
         }
       }, 100);
+
 
     } finally {
       setLoading(false);
@@ -251,9 +282,10 @@ function App() {
       }
 
       setResults(report.results);
-      setRecommendations(recs || []);
+      setRecommendations(recs || "");
       setCurrentFilename(report.filename);
       setSelectedReportId(report.id);
+      setCurrentReportData(report.rawData || {});
 
       if (resultsRef.current) {
         resultsRef.current.scrollIntoView({ behavior: "smooth" });
@@ -268,7 +300,7 @@ function App() {
     setHistory((prev) => prev.filter((r) => r.id !== id));
     if (selectedReportId === id) {
       setResults([]);
-      setRecommendations([]);
+      setRecommendations("");
       setCurrentFilename("");
       setSelectedReportId(null);
     }
@@ -283,6 +315,11 @@ function App() {
           <div className="min-h-screen w-full relative overflow-hidden">
             <AnimatedBackground />
             <Header onOpenAuth={() => setAuthModalOpen(true)} />
+              <ViewAllReportsButton
+            onClick={() => setShowAllReports(true)}
+            reportCount={history.length}
+            isLoggedIn={isLoggedIn}
+          />
             <main className="pt-24">
               <Hero 
                 onAnalyze={handleAnalyze} 
@@ -311,8 +348,15 @@ function App() {
               <About />
             </main>
             <Footer />
+            {Object.keys(currentReportData).length > 0 && (
+            <ChatbotContainer reportData={currentReportData} />
+          )}
           </div>
-
+          <CumulativeReportsView
+          history={history}
+          isOpen={showAllReports}
+          onClose={() => setShowAllReports(false)}
+        />
           <AuthModal
             isOpen={authModalOpen}
             onClose={() => setAuthModalOpen(false)}
