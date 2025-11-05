@@ -1,4 +1,3 @@
-// src/App.tsx
 import { useState, useRef, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -20,9 +19,6 @@ import { AuthProvider } from "./context/AuthContext";
 import AuthModal from "./components/auth/AuthModal";
 import { apiService } from "./services/api";
 
-// Import connection tester for development
-import ConnectionTester from "./components/dev/ConnectionTester";
-
 const theme = createTheme({
   palette: {
     primary: { main: "#0087ff" },
@@ -35,69 +31,56 @@ const queryClient = new QueryClient();
 console.log("[App] Application starting");
 console.log("[App] Environment:", import.meta.env.MODE);
 
-// Helper function to parse test values and ranges
+// Helper to get unit based on metric name
+function getUnit(metricName: string): string {
+  const name = metricName.toLowerCase();
+  if (name.includes('hb') || name.includes('hemoglobin')) return 'g/dL';
+  if (name.includes('rbc')) return '×10⁶/µL';
+  if (name.includes('wbc')) return '×10³/µL';
+  if (name.includes('platelet')) return '×10³/µL';
+  if (name.includes('mcv')) return 'fL';
+  if (name.includes('mch')) return 'pg';
+  if (name.includes('mchc')) return 'g/dL';
+  return '';
+}
+
+// Helper to get normal range based on metric name
+function getNormalRange(metricName: string): [number, number] {
+  const name = metricName.toLowerCase();
+  if (name.includes('hb') || name.includes('hemoglobin')) return [12, 16];
+  if (name.includes('rbc')) return [4.5, 5.5];
+  if (name.includes('wbc')) return [4, 10];
+  if (name.includes('platelet')) return [150, 400];
+  if (name.includes('mcv')) return [80, 100];
+  if (name.includes('mch')) return [27, 32];
+  if (name.includes('mchc')) return [32, 35];
+  return [0, 100]; // default fallback
+}
+
+// Helper function to parse test values
 function parseTestData(data: Record<string, string>) {
   console.log("[App] Parsing test data:", data);
   const results: any[] = [];
-  
+
   Object.entries(data).forEach(([key, value]) => {
+    // Extract numeric value from string
     const numericMatch = value.match(/(\d+\.?\d*)/);
-    const rangeMatch = value.match(/(\d+\.?\d*)\s*-\s*(\d+\.?\d*)/);
-    
     if (numericMatch) {
       const testValue = parseFloat(numericMatch[1]);
-      let normalRange: [number, number] = [0, 100];
-      
-      if (rangeMatch) {
-        normalRange = [parseFloat(rangeMatch[1]), parseFloat(rangeMatch[2])];
-      } else {
-        const keyLower = key.toLowerCase();
-        if (keyLower.includes('hb') || keyLower.includes('hemoglobin')) {
-          normalRange = [12, 16];
-        } else if (keyLower.includes('wbc')) {
-          normalRange = [4, 10];
-        } else if (keyLower.includes('rbc')) {
-          normalRange = [4.5, 5.5];
-        } else if (keyLower.includes('platelet')) {
-          normalRange = [150, 400];
-        }
-      }
-      
+      const normalRange = getNormalRange(key);
+      const unit = getUnit(key);
+
       results.push({
         name: key,
         value: testValue,
+        unit: unit,
         normal: normalRange,
       });
     }
   });
-  
+
   console.log("[App] Parsed results:", results);
   return results;
-}
-
-function generateRecommendations(results: any[]): string[] {
-  console.log("[App] Generating recommendations for results:", results);
-  const recs: string[] = [];
-  
-  results.forEach(r => {
-    if (r.value < r.normal[0]) {
-      recs.push(`Your ${r.name} is below normal range. Consider consulting a healthcare provider.`);
-    } else if (r.value > r.normal[1]) {
-      recs.push(`Your ${r.name} is above normal range. Please consult with your doctor.`);
-    }
-  });
-  
-  if (recs.length === 0) {
-    recs.push("All your test results are within normal ranges.");
-    recs.push("Maintain a balanced diet and regular exercise routine.");
-    recs.push("Stay hydrated and get adequate sleep.");
-  } else {
-    recs.push("Follow up with your healthcare provider for detailed guidance.");
-    recs.push("Maintain a healthy lifestyle with proper diet and exercise.");
-  }
-  
-  console.log("[App] Generated recommendations:", recs);
-  return recs;
 }
 
 function App() {
@@ -125,16 +108,51 @@ function App() {
     }
   }, []);
 
+  // Updated AI recommendations function - accepts full report history
+  const getAIRecommendations = async (reportHistory: Record<string, any>[]) => {
+    console.log("[App] Getting AI recommendations for full report history:", reportHistory);
+
+    try {
+      // Send the full report history dictionary instead of a single testData object
+      const response = await apiService.getAIRecommendations(reportHistory);
+
+      console.log("[App] AI recommendations received:", response);
+
+      if (response.results) {
+        const recs = response.results
+          .split('\n')
+          .filter((line: string) => line.trim().length > 0)
+          .map((line: string) => line.replace(/^[-•*]\s*/, '').trim());
+
+        return recs.length > 0 ? recs : [
+          "All your test results appear within acceptable ranges.",
+          "Keep maintaining your health with regular checkups and a balanced lifestyle."
+        ];
+      }
+
+      return [
+        "Unable to generate recommendations at this time.",
+        "Please consult your healthcare provider for detailed insights."
+      ];
+
+    } catch (err) {
+      console.error("[App] Failed to get AI recommendations:", err);
+      return [
+        "AI recommendations service is currently unavailable.",
+        "Please try again later or consult your doctor."
+      ];
+    }
+  };
+
   const loadReports = async () => {
     console.log("[App] loadReports called");
     try {
       const response = await apiService.getReports();
       console.log("[App] Reports loaded:", response);
-      
+
       const loadedHistory = response.report_history.map((reportData, idx) => {
         const parsedResults = parseTestData(reportData);
-        const recs = generateRecommendations(parsedResults);
-        
+
         return {
           id: `report_${idx}_${Date.now()}`,
           filename: `Report ${idx + 1}`,
@@ -148,12 +166,21 @@ function App() {
             ? "warning"
             : "normal",
           results: parsedResults,
-          recommendations: recs,
+          rawData: reportData,
         };
       });
-      
+
       console.log("[App] History processed:", loadedHistory);
       setHistory(loadedHistory);
+
+      // Get AI recommendations for all reports at once
+      if (response.report_history.length > 0) {
+        console.log("[App] Fetching AI recommendations for all reports...");
+        const aiRecs = await getAIRecommendations(response.report_history);
+        console.log("[App] AI recommendations received:", aiRecs);
+        setRecommendations(aiRecs);
+      }
+
     } catch (err) {
       console.error("[App] Failed to load reports:", err);
     }
@@ -163,51 +190,76 @@ function App() {
     console.log("[App] handleAnalyze called");
     console.log("[App] Data:", data);
     console.log("[App] Filename:", filename);
-    
-    const parsedResults = parseTestData(data);
-    const recs = generateRecommendations(parsedResults);
 
-    const newReport = {
-      id: Date.now().toString(),
-      filename: filename,
-      date: new Date().toLocaleDateString(),
-      summary: parsedResults.length > 0 
-        ? `${parsedResults.length} tests analyzed`
-        : "No tests found",
-      status: parsedResults.some(
-        (r) => r.value < r.normal[0] || r.value > r.normal[1]
-      )
-        ? "warning"
-        : "normal",
-      results: parsedResults,
-      recommendations: recs,
-    };
+    setLoading(true);
 
-    console.log("[App] New report created:", newReport);
-    
-    setResults(parsedResults);
-    setRecommendations(recs);
-    setCurrentFilename(filename);
-    setHistory((prev) => [newReport, ...prev]);
-    setSelectedReportId(newReport.id);
+    try {
+      const parsedResults = parseTestData(data);
 
-    // Scroll to results
-    setTimeout(() => {
-      if (resultsRef.current) {
-        console.log("[App] Scrolling to results");
-        resultsRef.current.scrollIntoView({ behavior: "smooth" });
-      }
-    }, 100);
+      // Get AI recommendations for this single report
+      console.log("[App] Fetching AI recommendations for new report...");
+      const aiRecs = await getAIRecommendations([data]);
+
+      const newReport = {
+        id: Date.now().toString(),
+        filename: filename,
+        date: new Date().toLocaleDateString(),
+        summary: parsedResults.length > 0 
+          ? `${parsedResults.length} tests analyzed`
+          : "No tests found",
+        status: parsedResults.some(
+          (r) => r.value < r.normal[0] || r.value > r.normal[1]
+        )
+          ? "warning"
+          : "normal",
+        results: parsedResults,
+        recommendations: aiRecs,
+        rawData: data,
+      };
+
+      console.log("[App] New report created:", newReport);
+
+      setResults(parsedResults);
+      setRecommendations(aiRecs);
+      setCurrentFilename(filename);
+      setHistory((prev) => [newReport, ...prev]);
+      setSelectedReportId(newReport.id);
+
+      // Scroll to results
+      setTimeout(() => {
+        if (resultsRef.current) {
+          console.log("[App] Scrolling to results");
+          resultsRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSelectReport = (report: any) => {
+  const handleSelectReport = async (report: any) => {
     console.log("[App] Report selected:", report);
-    setResults(report.results);
-    setRecommendations(report.recommendations);
-    setCurrentFilename(report.filename);
-    setSelectedReportId(report.id);
-    if (resultsRef.current) {
-      resultsRef.current.scrollIntoView({ behavior: "smooth" });
+    setLoading(true);
+
+    try {
+      // If recommendations aren't already loaded, get them
+      let recs = report.recommendations;
+      if (!recs && report.rawData) {
+        console.log("[App] Fetching AI recommendations for selected report...");
+        recs = await getAIRecommendations([report.rawData]);
+      }
+
+      setResults(report.results);
+      setRecommendations(recs || []);
+      setCurrentFilename(report.filename);
+      setSelectedReportId(report.id);
+
+      if (resultsRef.current) {
+        resultsRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -265,9 +317,6 @@ function App() {
             isOpen={authModalOpen}
             onClose={() => setAuthModalOpen(false)}
           />
-          
-          {/* Connection Tester - Remove in production */}
-          {import.meta.env.DEV && <ConnectionTester />}
         </ThemeProvider>
       </QueryClientProvider>
     </AuthProvider>

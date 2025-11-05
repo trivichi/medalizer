@@ -1,4 +1,3 @@
-// src/services/api.ts
 import axios from "axios";
 import { API_ENDPOINTS, getAuthHeader } from "../config/api";
 
@@ -32,6 +31,10 @@ export interface Report {
 export interface ReportsResponse {
   user_email: string;
   report_history: TestResult[];
+}
+
+export interface AIRecommendationResponse {
+  results: string;
 }
 
 // Configure axios defaults
@@ -126,6 +129,37 @@ export const apiService = {
       return response.data;
     } catch (error: any) {
       console.error("[API] Get reports failed");
+      console.error("[API] Error details:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      throw error;
+    }
+  },
+
+  async getAIRecommendations(reportHistory: Record<string, any>[]): Promise<AIRecommendationResponse> {
+    console.log("[API] Starting AI recommendations request");
+    console.log("[API] Report history:", reportHistory);
+    
+    const headers = {
+      ...getAuthHeader(),
+      "Content-Type": "application/json",
+    };
+    
+    console.log("[API] Request headers:", headers);
+    
+    try {
+      const response = await axios.post<AIRecommendationResponse>(
+        `${API_ENDPOINTS.AI_ANALYZE}`, 
+        reportHistory,
+        { headers }
+      );
+      console.log("[API] AI recommendations successful:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("[API] AI recommendations failed");
       console.error("[API] Error details:", {
         message: error.message,
         status: error.response?.status,

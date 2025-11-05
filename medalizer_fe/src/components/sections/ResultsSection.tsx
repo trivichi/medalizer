@@ -1,4 +1,3 @@
-// src/components/sections/ResultsSection.tsx
 import { useRef } from "react";
 import { motion } from "framer-motion";
 import {
@@ -18,6 +17,7 @@ import html2canvas from "html2canvas";
 type ResultItem = {
   name: string;
   value: number;
+  unit: string;
   normal: string | [number, number];
 };
 
@@ -146,7 +146,7 @@ export default function ResultsSection({
         </motion.div>
 
         <div ref={exportRef} className="bg-white p-6 rounded-lg">
-          {/* Metric cards */}
+          {/* Metric cards with units */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {results.map((r, idx) => {
               const status = getStatus(r.value, r.normal);
@@ -159,14 +159,19 @@ export default function ResultsSection({
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: idx * 0.1 }}
                 >
-                  <div className="text-sm text-gray-500">{r.name}</div>
-                  <div className="mt-1 text-2xl font-semibold text-gray-900">
-                    {r.value}
+                  <div className="text-sm font-medium text-gray-700">{r.name}</div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-gray-900">
+                      {r.value}
+                    </span>
+                    {r.unit && (
+                      <span className="text-sm text-gray-500">{r.unit}</span>
+                    )}
                   </div>
-                  <div className="mt-1 text-sm text-gray-600">
-                    Normal: {Array.isArray(r.normal) ? `${min} - ${max}` : r.normal}
+                  <div className="mt-2 text-sm text-gray-600">
+                    Normal: {min} - {max} {r.unit}
                   </div>
-                  <div className={`mt-2 text-sm font-bold ${status.color}`}>
+                  <div className={`mt-3 inline-block px-3 py-1 rounded-full text-xs font-bold ${status.bg} ${status.color} border`}>
                     {status.label}
                   </div>
                 </motion.div>
@@ -183,11 +188,11 @@ export default function ResultsSection({
               <ResponsiveContainer>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="Value" radius={[6, 6, 0, 0]}>
+                  <Bar dataKey="Value" radius={[6, 6, 0, 0]} name="Your Value">
                     {chartData.map((entry, index) => {
                       const result = results[index];
                       const status = getStatus(result.value, result.normal);
@@ -197,39 +202,56 @@ export default function ResultsSection({
                   <Bar
                     dataKey="Min"
                     fill="#82ca9d"
-                    opacity={0.7}
+                    opacity={0.5}
                     radius={[6, 6, 0, 0]}
+                    name="Normal Min"
                   />
                   <Bar
                     dataKey="Max"
                     fill="#ffc658"
-                    opacity={0.7}
+                    opacity={0.5}
                     radius={[6, 6, 0, 0]}
+                    name="Normal Max"
                   />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Recommendations */}
-          <div className="bg-white border rounded-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">
-              Recommendations
-            </h3>
-            <ul className="space-y-2 text-gray-700">
+          {/* AI-Generated Recommendations */}
+          <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              <h3 className="text-xl font-semibold text-gray-900">
+                AI-Generated Recommendations
+              </h3>
+            </div>
+            <div className="space-y-3">
               {recommendations.map((rec, i) => (
-                <motion.li
+                <motion.div
                   key={i}
-                  className="flex items-start gap-2"
+                  className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
                 >
-                  <span className="mt-1">✔</span>
-                  <span>{rec}</span>
-                </motion.li>
+                  <div className="mt-1 flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span className="text-blue-600 text-xs font-bold">{i + 1}</span>
+                    </div>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">{rec}</p>
+                </motion.div>
               ))}
-            </ul>
+            </div>
+            <div className="mt-4 pt-4 border-t border-blue-200">
+              <p className="text-xs text-gray-500 italic">
+                ⚠️ These insights are generated by AI for educational purposes only. 
+                Always consult with a qualified healthcare provider for personalized medical advice.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -239,7 +261,7 @@ export default function ResultsSection({
             onClick={handleDownloadPDF}
             className="btn-primary px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all"
           >
-            Download PDF Report
+            📥 Download PDF Report
           </button>
         </motion.div>
       </div>
